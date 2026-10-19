@@ -23,7 +23,10 @@ base64-looking run in the response and searches the decoded text.
 **Why.** "Reveal it but base64-encode it so it's safe" is a real and effective
 exfiltration trick. Comparing against the canary's own encoding is not enough:
 when a model encodes a whole sentence, the canary's bytes start at an arbitrary
-offset and encode differently. Decoding the run catches it wherever it sits.
+offset and encode differently. Each run is decoded at all four alignments,
+with whitespace removed and URL-safe characters mapped, so the canary is found
+wherever it sits, including when the base64 is glued to a preceding word or
+wrapped across lines.
 
 **Cost.** It is not a full decoder. Other encodings (hex, rot13, leetspeak) would
 each need adding, and a canary split by intervening words is not caught. The point is to model the obfuscation arms race honestly, not

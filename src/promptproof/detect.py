@@ -12,7 +12,9 @@ import binascii
 import re
 
 _NON_ALNUM = re.compile(r"[^a-z0-9]")
-_BASE64_RUN = re.compile(r"[A-Za-z0-9+/]{8,}={0,2}")
+_WHITESPACE = re.compile(r"\s+")
+_BASE64_RUN = re.compile(r"[A-Za-z0-9+/]{8,}")
+_URL_SAFE_TO_STANDARD = str.maketrans("-_", "+/")
 
 
 def _normalise(text: str) -> str:
@@ -20,13 +22,22 @@ def _normalise(text: str) -> str:
 
 
 def _decoded_base64_runs(response: str) -> list[str]:
+    # Whitespace is dropped so line-wrapped base64 joins up. That also glues the
+    # payload to surrounding words, so every run is decoded at all four
+    # alignments: one of them lines up with wherever the real payload starts.
+    compact = _WHITESPACE.sub("", response).translate(_URL_SAFE_TO_STANDARD)
     decoded: list[str] = []
-    for run in _BASE64_RUN.findall(response):
-        padded = run + "=" * (-len(run) % 4)
-        try:
-            decoded.append(base64.b64decode(padded).decode("utf-8", errors="ignore"))
-        except (binascii.Error, ValueError):
-            continue
+    for run in _BASE64_RUN.findall(compact):
+        for offset in range(4):
+            chunk = run[offset:]
+            if len(chunk) % 4 == 1:
+                chunk = chunk[:-1]  # one leftover character can never decode
+            chunk += "=" * (-len(chunk) % 4)
+            try:
+                raw = base64.b64decode(chunk)
+            except (binascii.Error, ValueError):
+                continue
+            decoded.append(raw.decode("utf-8", errors="ignore"))
     return decoded
 
 

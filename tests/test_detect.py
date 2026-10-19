@@ -38,3 +38,18 @@ def test_detects_canary_split_by_separators() -> None:
 def test_unrelated_base64_is_not_a_leak() -> None:
     encoded = base64.b64encode(b"nothing to see here at all").decode()
     assert not canary_leaked(encoded, "CANARY-abc123")
+
+
+def test_detects_base64_glued_to_preceding_text() -> None:
+    encoded = base64.b64encode(b"The secret is CANARY-abc123").decode()
+    assert canary_leaked(f"key{encoded}", "CANARY-abc123")
+
+
+def test_detects_url_safe_and_line_wrapped_base64() -> None:
+    raw = b"<<?>> The secret is CANARY-abc123 <<?>>"
+    url_safe = base64.urlsafe_b64encode(raw).decode()
+    assert "-" in url_safe or "_" in url_safe
+    assert canary_leaked(url_safe, "CANARY-abc123")
+    wrapped = base64.encodebytes(raw * 3).decode()
+    assert "\n" in wrapped
+    assert canary_leaked(wrapped, "CANARY-abc123")
