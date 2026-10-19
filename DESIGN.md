@@ -29,8 +29,11 @@ wherever it sits, including when the base64 is glued to a preceding word or
 wrapped across lines.
 
 **Cost.** It is not a full decoder. Other encodings (hex, rot13, leetspeak) would
-each need adding, and a canary split by intervening words is not caught. The point is to model the obfuscation arms race honestly, not
-to claim it is finished.
+each need adding, and a canary split by intervening words is not caught. The point
+is to model the obfuscation arms race honestly, not to claim it is finished.
+
+Separator stripping has a cost too: it runs over the whole response, so a short
+canary could match by accident. Canaries need at least eight letters or digits.
 
 ## 3. The target is a one-method protocol
 

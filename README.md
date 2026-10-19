@@ -56,5 +56,4 @@ not catch) are in [DESIGN.md](./DESIGN.md).
 
 Working and tested: leak detection (plain, separator-split, and base64 at any
 offset), the harness against both reference targets, and the attack corpus are
-covered by tests. CI runs ruff,
-format check, mypy (strict), and pytest.
+covered by tests. CI runs ruff, format check, mypy (strict), and pytest.

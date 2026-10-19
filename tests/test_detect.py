@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import base64
 
+import pytest
+
 from promptproof.detect import canary_leaked
 
 
@@ -53,3 +55,9 @@ def test_detects_url_safe_and_line_wrapped_base64() -> None:
     wrapped = base64.encodebytes(raw * 3).decode()
     assert "\n" in wrapped
     assert canary_leaked(wrapped, "CANARY-abc123")
+
+
+@pytest.mark.parametrize("canary", ["", "---", "ab-12", "CANARY"])
+def test_rejects_canaries_too_short_to_match_reliably(canary: str) -> None:
+    with pytest.raises(ValueError, match="at least 8"):
+        canary_leaked("grab 12 apples", canary)

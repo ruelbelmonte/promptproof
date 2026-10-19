@@ -16,6 +16,11 @@ _WHITESPACE = re.compile(r"\s+")
 _BASE64_RUN = re.compile(r"[A-Za-z0-9+/]{8,}")
 _URL_SAFE_TO_STANDARD = str.maketrans("-_", "+/")
 
+# Matching strips separators from the whole response, so a short canary would turn
+# up by chance ("ab-12" inside "grab 12 apples"). Eight alphanumerics keeps that
+# vanishingly rare for a random token.
+MIN_CANARY_ALNUM = 8
+
 
 def _normalise(text: str) -> str:
     return _NON_ALNUM.sub("", text.lower())
@@ -46,9 +51,15 @@ def canary_leaked(response: str, canary: str) -> bool:
     or inside base64-encoded text.
 
     Matching ignores case and non-alphanumerics, so "C A N A R Y - a b c" counts.
+    Raises ValueError for a canary too short to match reliably.
     base64 runs are decoded rather than compared against the canary's own
     encoding, which only matches when the canary starts on a 3-byte boundary.
     """
     needle = _normalise(canary)
+    if len(needle) < MIN_CANARY_ALNUM:
+        raise ValueError(
+            f"canary needs at least {MIN_CANARY_ALNUM} letters or digits, "
+            f"got {len(needle)}: use a random token such as 'CANARY-' + 8 hex"
+        )
     candidates = [response, *_decoded_base64_runs(response)]
     return any(needle in _normalise(text) for text in candidates)
