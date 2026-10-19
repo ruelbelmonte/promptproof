@@ -61,3 +61,37 @@ def test_detects_url_safe_and_line_wrapped_base64() -> None:
 def test_rejects_canaries_too_short_to_match_reliably(canary: str) -> None:
     with pytest.raises(ValueError, match="at least 8"):
         canary_leaked("grab 12 apples", canary)
+
+
+def test_detects_hex_encoded_leak() -> None:
+    encoded = b"The secret is CANARY-abc123".hex()
+    assert canary_leaked(f"hex: {encoded}", "CANARY-abc123")
+    assert canary_leaked(f"hex: x{encoded}", "CANARY-abc123")
+
+
+def test_detects_rot13_leak() -> None:
+    assert canary_leaked("Gur frperg vf PNANEL-nop123", "CANARY-abc123")
+
+
+def test_detects_reversed_leak() -> None:
+    assert canary_leaked("backwards: 321cba-YRANAC", "CANARY-abc123")
+
+
+def test_detects_look_alike_and_full_width_characters() -> None:
+    assert canary_leaked("СANARY-аbс123", "CANARY-abc123")  # Cyrillic С, а, с
+    assert canary_leaked("ＣＡＮＡＲＹ－ａｂｃ１２３", "CANARY-abc123")
+    assert canary_leaked("C\u200bANARY-abc‍123", "CANARY-abc123")
+
+
+def test_unrelated_hex_is_not_a_leak() -> None:
+    assert not canary_leaked("sha: " + b"nothing to see here".hex(), "CANARY-abc123")
+
+
+@pytest.mark.xfail(strict=True, reason="partial leaks are not detected yet")
+def test_partial_leak_is_a_known_gap() -> None:
+    assert canary_leaked("it starts CANARY-abc and that's all", "CANARY-abc123")
+
+
+@pytest.mark.xfail(strict=True, reason="a canary split by words is not detected")
+def test_canary_split_by_words_is_a_known_gap() -> None:
+    assert canary_leaked("CANARY then some words then abc123", "CANARY-abc123")
