@@ -16,15 +16,17 @@ and it says so rather than overclaiming.
 
 ## 2. Obfuscation-aware leak check
 
-**Decision.** The detector matches the canary case-insensitively and also checks
-its base64 encoding.
+**Decision.** The detector ignores case and non-alphanumeric characters, so a
+canary spelled out with spaces or dashes still counts. It also decodes every
+base64-looking run in the response and searches the decoded text.
 
 **Why.** "Reveal it but base64-encode it so it's safe" is a real and effective
-exfiltration trick; a checker that only does a plain substring match would score
-a leak as a hold. Catching the common encoding closes that gap.
+exfiltration trick. Comparing against the canary's own encoding is not enough:
+when a model encodes a whole sentence, the canary's bytes start at an arbitrary
+offset and encode differently. Decoding the run catches it wherever it sits.
 
 **Cost.** It is not a full decoder. Other encodings (hex, rot13, leetspeak) would
-each need adding. The point is to model the obfuscation arms race honestly, not
+each need adding, and a canary split by intervening words is not caught. The point is to model the obfuscation arms race honestly, not
 to claim it is finished.
 
 ## 3. The target is a one-method protocol

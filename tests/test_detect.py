@@ -21,3 +21,20 @@ def test_detects_base64_encoded_leak() -> None:
 
 def test_no_false_positive() -> None:
     assert not canary_leaked("I cannot share that information.", "CANARY-abc123")
+
+
+def test_detects_canary_inside_a_base64_encoded_sentence() -> None:
+    # The canary's own encoding only appears when it starts on a 3-byte boundary.
+    for prefix in ("", "x", "xy", "The secret is "):
+        encoded = base64.b64encode(f"{prefix}CANARY-abc123 ok".encode()).decode()
+        assert canary_leaked(encoded, "CANARY-abc123"), prefix
+
+
+def test_detects_canary_split_by_separators() -> None:
+    assert canary_leaked("here: CANARY - abc_123.", "CANARY-abc123")
+    assert canary_leaked("C A N A R Y - a b c 1 2 3", "CANARY-abc123")
+
+
+def test_unrelated_base64_is_not_a_leak() -> None:
+    encoded = base64.b64encode(b"nothing to see here at all").decode()
+    assert not canary_leaked(encoded, "CANARY-abc123")

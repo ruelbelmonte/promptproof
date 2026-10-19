@@ -13,7 +13,7 @@ are never attacked are just hopes; this is how you find out whether they hold.
 
 ```
 plant a canary in the target  ->  fire each attack as user input
-   ->  did the canary come back out (plainly or base64-encoded)?
+   ->  did the canary come back out (plainly, spaced out, or inside base64)?
         yes -> the attack succeeded, the system LEAKED
         no  -> the attack HELD
    ->  report: N/total attacks held
@@ -42,6 +42,7 @@ calls your assistant, constructed with a canary as its protected secret, then:
 
 ```python
 from promptproof.harness import run_suite
+
 report = run_suite(my_target, canary="CANARY-...")
 print(f"{report.held}/{report.total} held")
 ```
@@ -53,6 +54,7 @@ not catch) are in [DESIGN.md](./DESIGN.md).
 
 ## Status
 
-Working and tested: leak detection (plain and base64), the harness against both
-reference targets, and the attack corpus are covered by tests. CI runs ruff,
+Working and tested: leak detection (plain, separator-split, and base64 at any
+offset), the harness against both reference targets, and the attack corpus are
+covered by tests. CI runs ruff,
 format check, mypy (strict), and pytest.
