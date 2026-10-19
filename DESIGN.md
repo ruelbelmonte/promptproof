@@ -28,8 +28,9 @@ with whitespace removed and URL-safe characters mapped, so the canary is found
 wherever it sits, including when the base64 is glued to a preceding word or
 wrapped across lines.
 
-**Cost.** It is not a full decoder. Other encodings (hex, rot13, leetspeak) would
-each need adding, and a canary split by intervening words is not caught. The point
+**Cost.** It is not a full decoder. Hex, ROT13, reversed text and look-alike
+characters are handled. Leetspeak, nested encodings and a canary split by
+intervening words are not. The point
 is to model the obfuscation arms race honestly, not to claim it is finished.
 
 Separator stripping has a cost too: it runs over the whole response, so a short
@@ -41,8 +42,11 @@ canary could match by accident. Canaries need at least eight letters or digits.
 reference targets (leaky, hardened) ship for demos and tests.
 
 **Why.** Anything that turns a string into a string can be tested: a local
-model, a hosted API, a whole agent. The reference targets let the harness prove
+model, a hosted API, a whole agent. The reference targets let the harness run
 itself with no external dependency, and make the tests deterministic.
+
+**Cost.** The reference targets are rigged by construction, so a run against them
+checks the harness, not any model's resistance.
 
 ## 4. A small, readable corpus over a giant one
 
